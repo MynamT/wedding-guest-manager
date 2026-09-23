@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wedding Guest Money Manager</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-icon">🔐</div>
+      <p class="eyebrow center">Wedding Reception Manager</p>
+      <h1 class="login-title">បញ្ជីចំណងដៃភ្ញៀវ</h1>
+      <p class="login-subtitle">សូមបញ្ចូលលេខសម្ងាត់ដើម្បីចូលប្រើប្រាស់</p>
+
+      <form id="loginForm">
+        <label for="pinInput">លេខសម្ងាត់</label>
+        <div class="pin-wrap">
+          <input
+            id="pinInput"
+            type="password"
+            inputmode="numeric"
+            autocomplete="current-password"
+            placeholder="••••••"
+            maxlength="30"
+          />
+          <button id="togglePinBtn" type="button" class="icon-btn" title="បង្ហាញ / លាក់លេខសម្ងាត់">👁</button>
+        </div>
+
+        <p id="loginError" class="login-error" aria-live="polite"></p>
+
+        <button id="loginBtn" type="submit" class="btn primary login-btn">
+          ចូលប្រើ
+        </button>
+      </form>
+
+      <p class="login-note">លេខសម្ងាត់ត្រូវបានពិនិត្យនៅ Backend មិនត្រូវបានរក្សាទុកក្នុង Frontend ទេ។</p>
+    </div>
+  </section>
+
+  <!-- MAIN APP -->
+  <div id="mainApp" class="app-shell hidden">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Wedding Reception Manager</p>
+        <h1>បញ្ជីចំណងដៃភ្ញៀវ</h1>
+        <p class="subtitle">ស្វែងរកភ្ញៀវ បញ្ចូលចំណងដៃ និងគ្រប់គ្រងទិន្នន័យបានងាយៗ</p>
+      </div>
+
+      <div class="top-actions">
+        <div class="role-badge" id="roleBadge">Owner</div>
+        <button id="addGuestBtn" class="btn primary">+ បន្ថែមភ្ញៀវ</button>
+        <button id="exportBtn" class="btn">Export CSV</button>
+        <button id="resetBtn" class="btn danger-outline owner-only">Reset Data</button>
+        <button id="logoutBtn" class="btn">ចាកចេញ</button>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span>ភ្ញៀវសរុប</span>
+        <strong id="totalGuests">0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>សរុប KHR</span>
+        <strong id="totalKHR">KHR 0</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>សរុប USD</span>
+        <strong id="totalUSD">$0.00</strong>
+      </article>
+
+      <article class="summary-card">
+        <span>Cash / QR</span>
+        <strong id="paymentSplit">0 / 0</strong>
+      </article>
+    </section>
+
+    <section class="toolbar card">
+      <div class="search-wrap">
+        <label for="searchInput">ស្វែងរកភ្ញៀវ</label>
+        <div class="search-box">
+          <span>⌕</span>
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="វាយឈ្មោះភ្ញៀវ ឬ Bank..."
+            autocomplete="off"
+          />
+          <button id="clearSearch" type="button" title="Clear search">×</button>
+        </div>
+      </div>
+
+      <div class="filter-wrap">
+        <label for="paymentFilter">ប្រភេទបង់ប្រាក់</label>
+        <select id="paymentFilter">
+          <option value="all">ទាំងអស់</option>
+          <option value="Cash">Cash</option>
+          <option value="QR">QR</option>
+        </select>
+      </div>
+
+      <div class="filter-wrap">
+        <label for="bankFilter">ធនាគារ</label>
+        <select id="bankFilter">
+          <option value="all">ទាំងអស់</option>
+          <option value="ABA">ABA</option>
+          <option value="ACLEDA">ACLEDA</option>
+          <option value="Wing">Wing</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="toolbar-spacer"></div>
+      <button id="addColumnBtn" class="btn small owner-only">+ Column</button>
+    </section>
+
+    <section class="table-card card">
+      <div class="table-meta">
+        <span id="resultInfo">0 records</span>
+
+        <div class="sync-wrap">
+          <span id="syncStatus" class="sync-status online">● បានភ្ជាប់</span>
+          <span class="hint">រក្សាទុកដោយស្វ័យប្រវត្តិទៅ Google Sheets</span>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table id="guestTable">
+          <thead>
+            <tr id="tableHeader"></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+          <tfoot>
+            <tr id="tableFooter"></tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ADD COLUMN -->
+  <dialog id="columnDialog">
+    <form method="dialog" class="dialog-card">
+      <h3>បន្ថែម Column ថ្មី</h3>
+
+      <label>
+        ឈ្មោះ Column
+        <input id="newColumnName" type="text" placeholder="ឧ. លេខទូរស័ព្ទ" />
+      </label>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn">បោះបង់</button>
+        <button id="confirmAddColumn" value="default" class="btn primary">បន្ថែម</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- RENAME COLUMN -->
+  <dialog id="renameColumnDialog">
+    <form method="dialog" class="dialog-card">
+      <h3>ប្តូរឈ្មោះ Column</h3>
+
+      <label>
+        ឈ្មោះថ្មី
+        <input id="renameColumnInput" type="text" />
+      </label>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn">បោះបង់</button>
+        <button id="confirmRenameColumn" value="default" class="btn primary">រក្សាទុក</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="emptyStateTemplate">
+    <tr>
+      <td class="empty-state" colspan="99">
+        <div>មិនមានទិន្នន័យត្រូវនឹងការស្វែងរកទេ</div>
+        <small>សាកល្បងស្វែងរកឈ្មោះផ្សេង ឬ Clear Filter</small>
+      </td>
+    </tr>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
