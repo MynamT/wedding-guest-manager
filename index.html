@@ -53,7 +53,10 @@
           <input
             id="pinInput"
             type="password"
+            inputmode="text"
             autocomplete="current-password"
+            autocapitalize="none"
+            spellcheck="false"
             placeholder="បញ្ចូលលេខសម្ងាត់"
             maxlength="30"
           />
@@ -387,19 +390,13 @@
         <table id="guestTable">
 
           <thead>
-
             <tr id="tableHeader"></tr>
-
           </thead>
-
 
           <tbody id="tableBody"></tbody>
 
-
           <tfoot>
-
             <tr id="tableFooter"></tr>
-
           </tfoot>
 
         </table>
@@ -426,7 +423,6 @@
         បន្ថែម Column ថ្មី
       </h3>
 
-
       <label for="newColumnName">
         ឈ្មោះ Column
       </label>
@@ -438,7 +434,6 @@
         autocomplete="off"
       />
 
-
       <div class="dialog-actions">
 
         <button
@@ -447,7 +442,6 @@
         >
           បោះបង់
         </button>
-
 
         <button
           id="confirmAddColumn"
@@ -479,7 +473,6 @@
         ប្តូរឈ្មោះ Column
       </h3>
 
-
       <label for="renameColumnInput">
         ឈ្មោះថ្មី
       </label>
@@ -490,7 +483,6 @@
         autocomplete="off"
       />
 
-
       <div class="dialog-actions">
 
         <button
@@ -499,7 +491,6 @@
         >
           បោះបង់
         </button>
-
 
         <button
           id="confirmRenameColumn"
