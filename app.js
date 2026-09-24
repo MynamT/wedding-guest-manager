@@ -15,6 +15,15 @@ const AUTO_SAVE_DELAY_MS = 650;
 
 
 /* =========================================================
+   NETWORK SETTINGS
+========================================================= */
+
+const LOAD_RETRY_COUNT = 4;
+const AUTO_REFRESH_RETRY_COUNT = 2;
+const REQUEST_TIMEOUT_MS = 15000;
+
+
+/* =========================================================
    TABLE SIZE SETTINGS
 ========================================================= */
 
@@ -45,12 +54,14 @@ function loadSizeMap(key) {
   }
 }
 
+
 function saveSizeMap(key, value) {
   localStorage.setItem(
     key,
     JSON.stringify(value),
   );
 }
+
 
 let columnWidths =
   loadSizeMap(COLUMN_WIDTHS_KEY);
@@ -69,10 +80,10 @@ let state = {
 };
 
 let currentRole = null;
-
 let renameColumnKey = null;
-
 let refreshTimer = null;
+
+let isLoadingData = false;
 
 const pendingSaves = new Map();
 
@@ -241,6 +252,19 @@ const els = {
 
 
 /* =========================================================
+   SMALL HELPER
+========================================================= */
+
+function sleep(ms) {
+  return new Promise(
+    (resolve) => {
+      setTimeout(resolve, ms);
+    },
+  );
+}
+
+
+/* =========================================================
    API
 ========================================================= */
 
@@ -266,61 +290,154 @@ async function api(
   }
 
 
-  const response = await fetch(
-    API_URL,
-    {
-      method: "POST",
+  /*
+   * Abort the request if Google Apps Script
+   * takes too long to answer.
+   */
 
-      headers: {
-        "Content-Type":
-          "text/plain;charset=utf-8",
+  const controller =
+    new AbortController();
+
+
+  const timeout =
+    setTimeout(
+      () => {
+        controller.abort();
       },
-
-      body: JSON.stringify({
-        action,
-        token: getToken(),
-        ...payload,
-      }),
-    },
-  );
-
-
-  if (!response.ok) {
-    throw new Error(
-      `HTTP_${response.status}`,
+      REQUEST_TIMEOUT_MS,
     );
-  }
 
 
-  const data =
-    await response.json();
+  try {
+
+    const response =
+      await fetch(
+        API_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "text/plain;charset=utf-8",
+          },
+
+          body: JSON.stringify({
+            action,
+            token: getToken(),
+            ...payload,
+          }),
+
+          signal:
+            controller.signal,
+
+          cache:
+            "no-store",
+        },
+      );
 
 
-  if (!data.ok) {
-
-    if (
-      data.error === "UNAUTHORIZED"
-    ) {
-      logout(false);
+    if (!response.ok) {
+      throw new Error(
+        `HTTP_${response.status}`,
+      );
     }
 
-    throw new Error(
-      data.error || "API_ERROR",
+
+    const text =
+      await response.text();
+
+
+    if (!text) {
+      throw new Error(
+        "EMPTY_SERVER_RESPONSE",
+      );
+    }
+
+
+    let data;
+
+
+    try {
+
+      data =
+        JSON.parse(text);
+
+    } catch (error) {
+
+      throw new Error(
+        "INVALID_SERVER_RESPONSE",
+      );
+    }
+
+
+    if (!data.ok) {
+
+      if (
+        data.error ===
+        "UNAUTHORIZED"
+      ) {
+
+        /*
+         * This is the ONLY server error
+         * that should remove the login.
+         */
+
+        logout(false);
+      }
+
+
+      throw new Error(
+        data.error ||
+        "API_ERROR",
+      );
+    }
+
+
+    return data;
+
+
+  } catch (error) {
+
+    if (
+      error.name ===
+      "AbortError"
+    ) {
+
+      throw new Error(
+        "REQUEST_TIMEOUT",
+      );
+    }
+
+
+    throw error;
+
+
+  } finally {
+
+    clearTimeout(
+      timeout,
     );
   }
-
-
-  return data;
 }
 
+
+/* =========================================================
+   SYNC STATUS
+========================================================= */
 
 function setSyncStatus(
   type,
   text,
 ) {
 
+  if (!els.syncStatus) {
+    return;
+  }
+
+
   els.syncStatus.className =
     `sync-status ${type}`;
+
 
   els.syncStatus.textContent =
     text;
@@ -351,7 +468,9 @@ async function submitLogin(
   }
 
 
-  els.loginBtn.disabled = true;
+  els.loginBtn.disabled =
+    true;
+
 
   els.loginBtn.textContent =
     "កំពុងចូល...";
@@ -374,6 +493,7 @@ async function submitLogin(
       result.token,
     );
 
+
     localStorage.setItem(
       ROLE_KEY,
       result.role,
@@ -383,7 +503,10 @@ async function submitLogin(
     currentRole =
       result.role;
 
-    els.pinInput.value = "";
+
+    els.pinInput.value =
+      "";
+
 
     els.loginError.textContent =
       "";
@@ -391,12 +514,28 @@ async function submitLogin(
 
     showApp();
 
-    await loadData();
+
+    /*
+     * Try several times because Apps Script
+     * may need a moment to wake up.
+     */
+
+    await loadData({
+      retries:
+        LOAD_RETRY_COUNT,
+    });
+
 
     startAutoRefresh();
 
 
   } catch (error) {
+
+    console.error(
+      "Login error:",
+      error,
+    );
+
 
     if (
       error.message ===
@@ -406,6 +545,7 @@ async function submitLogin(
       els.loginError.textContent =
         "លេខសម្ងាត់មិនត្រឹមត្រូវ។";
 
+
     } else if (
       error.message ===
       "API_URL_NOT_CONFIGURED"
@@ -414,15 +554,42 @@ async function submitLogin(
       els.loginError.textContent =
         "សូមដាក់ Google Apps Script Web App URL ក្នុង app.js ជាមុនសិន។";
 
+
+    } else if (
+      getToken()
+    ) {
+
+      /*
+       * Login succeeded but the first
+       * data load temporarily failed.
+       *
+       * Do NOT remove the session.
+       */
+
+      showApp();
+
+
+      setSyncStatus(
+        "error",
+        "● Server មិនទាន់ឆ្លើយតប — កំពុងព្យាយាមភ្ជាប់ឡើងវិញ",
+      );
+
+
+      startAutoRefresh();
+
+
     } else {
 
       els.loginError.textContent =
         "មិនអាចភ្ជាប់ទៅ Server បានទេ។";
     }
 
+
   } finally {
 
-    els.loginBtn.disabled = false;
+    els.loginBtn.disabled =
+      false;
+
 
     els.loginBtn.textContent =
       "ចូលប្រើ";
@@ -454,17 +621,54 @@ async function restoreSession() {
     );
 
 
+  /*
+   * Show app immediately.
+   * Don't logout just because one network
+   * request fails.
+   */
+
+  showApp();
+
+
   try {
 
-    showApp();
+    await loadData({
+      retries:
+        LOAD_RETRY_COUNT,
+    });
 
-    await loadData();
 
     startAutoRefresh();
 
+
   } catch (error) {
 
-    logout(false);
+    console.error(
+      "Initial load failed:",
+      error,
+    );
+
+
+    /*
+     * api() already logs out if the
+     * backend actually says UNAUTHORIZED.
+     *
+     * Network problem?
+     * Stay logged in.
+     */
+
+    if (!getToken()) {
+      return;
+    }
+
+
+    setSyncStatus(
+      "error",
+      "● Server មិនទាន់ឆ្លើយតប — កំពុងព្យាយាមភ្ជាប់ឡើងវិញ",
+    );
+
+
+    startAutoRefresh();
   }
 }
 
@@ -479,9 +683,11 @@ function showApp() {
     "hidden",
   );
 
+
   els.mainApp.classList.remove(
     "hidden",
   );
+
 
   applyRoleUI();
 }
@@ -497,16 +703,20 @@ function showLogin() {
     "hidden",
   );
 
+
   els.loginScreen.classList.remove(
     "hidden",
   );
+
 
   stopAutoRefresh();
 
 
   setTimeout(
     () => {
+
       els.pinInput.focus();
+
     },
     50,
   );
@@ -525,12 +735,14 @@ function logout(
     TOKEN_KEY,
   );
 
+
   localStorage.removeItem(
     ROLE_KEY,
   );
 
 
-  currentRole = null;
+  currentRole =
+    null;
 
 
   state = {
@@ -540,6 +752,7 @@ function logout(
 
 
   if (clearMessage) {
+
     els.loginError.textContent =
       "";
   }
@@ -591,7 +804,22 @@ async function loadData(
 
   const {
     quiet = false,
+    retries = 3,
   } = options;
+
+
+  /*
+   * Prevent multiple simultaneous
+   * refresh requests.
+   */
+
+  if (isLoadingData) {
+    return null;
+  }
+
+
+  isLoadingData =
+    true;
 
 
   if (!quiet) {
@@ -603,28 +831,163 @@ async function loadData(
   }
 
 
-  const result =
-    await api("load");
+  let lastError =
+    null;
 
 
-  state.columns =
-    result.columns || [];
+  try {
 
-  state.rows =
-    result.rows || [];
+    for (
+      let attempt = 1;
+      attempt <= retries;
+      attempt++
+    ) {
 
-  currentRole =
-    result.role ||
-    currentRole;
+      try {
+
+        const result =
+          await api("load");
 
 
-  render();
+        /*
+         * Validate server response.
+         *
+         * Never replace good data
+         * with malformed/failed data.
+         */
+
+        if (
+          !Array.isArray(
+            result.columns,
+          )
+        ) {
+
+          throw new Error(
+            "INVALID_COLUMNS",
+          );
+        }
 
 
-  setSyncStatus(
-    "online",
-    "● បានភ្ជាប់",
-  );
+        if (
+          !Array.isArray(
+            result.rows,
+          )
+        ) {
+
+          throw new Error(
+            "INVALID_ROWS",
+          );
+        }
+
+
+        /*
+         * Only NOW replace the table data.
+         */
+
+        state.columns =
+          result.columns;
+
+
+        state.rows =
+          result.rows;
+
+
+        currentRole =
+          result.role ||
+          currentRole;
+
+
+        render();
+
+
+        setSyncStatus(
+          "online",
+          "● បានភ្ជាប់",
+        );
+
+
+        return result;
+
+
+      } catch (error) {
+
+        lastError =
+          error;
+
+
+        console.warn(
+          `Load attempt ${attempt}/${retries} failed:`,
+          error,
+        );
+
+
+        /*
+         * If actual session expired,
+         * api() has already logged out.
+         */
+
+        if (!getToken()) {
+          throw error;
+        }
+
+
+        if (
+          attempt < retries
+        ) {
+
+          setSyncStatus(
+            "saving",
+            `● កំពុងភ្ជាប់ឡើងវិញ... ${attempt}/${retries}`,
+          );
+
+
+          /*
+           * Retry delays:
+           *
+           * 1 = 800 ms
+           * 2 = 1600 ms
+           * 3 = 2400 ms
+           * 4 = 3200 ms
+           */
+
+          await sleep(
+            800 * attempt,
+          );
+        }
+      }
+    }
+
+
+    /*
+     * IMPORTANT:
+     *
+     * We do NOT set:
+     *
+     * state.rows = []
+     *
+     * Existing visible data stays
+     * on screen during network failure.
+     */
+
+    setSyncStatus(
+      "error",
+      "● ការភ្ជាប់មានបញ្ហា — ទិន្នន័យចាស់នៅតែរក្សាទុក",
+    );
+
+
+    throw (
+      lastError ||
+      new Error(
+        "LOAD_FAILED",
+      )
+    );
+
+
+  } finally {
+
+    isLoadingData =
+      false;
+  }
 }
 
 
@@ -641,12 +1004,21 @@ function startAutoRefresh() {
     setInterval(
       async () => {
 
+        /*
+         * Don't refresh background tab.
+         */
+
         if (
           document.hidden
         ) {
           return;
         }
 
+
+        /*
+         * Don't refresh while user
+         * is typing.
+         */
 
         const active =
           document.activeElement;
@@ -667,8 +1039,20 @@ function startAutoRefresh() {
         }
 
 
+        /*
+         * Don't reload data while
+         * a save is pending.
+         */
+
         if (
           pendingSaves.size > 0
+        ) {
+          return;
+        }
+
+
+        if (
+          isLoadingData
         ) {
           return;
         }
@@ -678,14 +1062,31 @@ function startAutoRefresh() {
 
           await loadData({
             quiet: true,
+
+            retries:
+              AUTO_REFRESH_RETRY_COUNT,
           });
+
 
         } catch (error) {
 
-          setSyncStatus(
-            "error",
-            "● ការភ្ជាប់មានបញ្ហា",
+          console.warn(
+            "Auto refresh failed:",
+            error,
           );
+
+
+          /*
+           * Keep current data on screen.
+           */
+
+          if (getToken()) {
+
+            setSyncStatus(
+              "error",
+              "● ការភ្ជាប់មានបញ្ហា — នឹងព្យាយាមម្ដងទៀត",
+            );
+          }
         }
 
       },
@@ -693,6 +1094,10 @@ function startAutoRefresh() {
     );
 }
 
+
+/* =========================================================
+   STOP AUTO REFRESH
+========================================================= */
 
 function stopAutoRefresh() {
 
@@ -702,7 +1107,9 @@ function stopAutoRefresh() {
       refreshTimer,
     );
 
-    refreshTimer = null;
+
+    refreshTimer =
+      null;
   }
 }
 
@@ -736,7 +1143,7 @@ function filteredRows() {
             (column) =>
               String(
                 row[column.key] ??
-                  "",
+                "",
               ),
           )
           .join(" ")
@@ -769,7 +1176,8 @@ function filteredRows() {
                 row.bank,
               )
 
-            : row.bank === bank
+            : row.bank ===
+              bank
         );
 
 
@@ -864,6 +1272,7 @@ function getColumnWidth(
     saved >=
       MIN_COLUMN_WIDTH
   ) {
+
     return saved;
   }
 
@@ -894,8 +1303,10 @@ function renderColgroup() {
       "col",
     );
 
+
   noCol.style.width =
     "64px";
+
 
   els.colgroup.appendChild(
     noCol,
@@ -962,6 +1373,7 @@ function renderHeader() {
 
   noTh.className =
     "row-number";
+
 
   noTh.textContent =
     "No.";
@@ -1104,7 +1516,9 @@ function renderHeader() {
       );
 
 
-      /* COLUMN RESIZE HANDLE */
+      /*
+       * COLUMN RESIZE
+       */
 
       const resizeHandle =
         document.createElement(
@@ -1137,6 +1551,7 @@ function renderHeader() {
         (event) => {
 
           event.preventDefault();
+
 
           autoFitColumn(
             column.key,
@@ -1221,7 +1636,9 @@ function renderBody() {
         row.id;
 
 
-      /* SAVED ROW HEIGHT */
+      /*
+       * SAVED ROW HEIGHT
+       */
 
       const savedHeight =
         Number(
@@ -1244,7 +1661,9 @@ function renderBody() {
       }
 
 
-      /* ROW NUMBER */
+      /*
+       * ROW NUMBER
+       */
 
       const noTd =
         document.createElement(
@@ -1262,7 +1681,9 @@ function renderBody() {
         ) + 1;
 
 
-      /* ROW RESIZE HANDLE */
+      /*
+       * ROW RESIZE HANDLE
+       */
 
       const rowResizeHandle =
         document.createElement(
@@ -1297,6 +1718,7 @@ function renderBody() {
 
           event.preventDefault();
 
+
           resetRowHeight(
             row.id,
             tr,
@@ -1315,7 +1737,9 @@ function renderBody() {
       );
 
 
-      /* CELLS */
+      /*
+       * CELLS
+       */
 
       state.columns.forEach(
         (column) => {
@@ -1341,7 +1765,9 @@ function renderBody() {
       );
 
 
-      /* ACTION CELL */
+      /*
+       * ACTION CELL
+       */
 
       const actionTd =
         document.createElement(
@@ -1395,6 +1821,7 @@ function renderBody() {
           deleteButton,
         );
 
+
       } else {
 
         actionTd.textContent =
@@ -1435,7 +1862,9 @@ function makeEditor(
   let input;
 
 
-  /* PAYMENT */
+  /*
+   * PAYMENT
+   */
 
   if (
     column.type ===
@@ -1484,7 +1913,9 @@ function makeEditor(
       row[column.key] ?? "";
 
 
-  /* BANK */
+  /*
+   * BANK
+   */
 
   } else if (
     column.type ===
@@ -1514,7 +1945,9 @@ function makeEditor(
     ensureBankOptions();
 
 
-  /* NORMAL CELL */
+  /*
+   * NORMAL CELL
+   */
 
   } else {
 
@@ -1531,8 +1964,6 @@ function makeEditor(
     input.value =
       row[column.key] ?? "";
 
-
-    /* NUMBER */
 
     if (
       column.type ===
@@ -1562,6 +1993,7 @@ function makeEditor(
         column.key === "usd"
           ? "0.00"
           : "0";
+
 
     } else {
 
@@ -1756,10 +2188,10 @@ function startColumnResize(
         key,
 
         startWidth +
-          (
-            moveEvent.clientX -
-            startX
-          ),
+        (
+          moveEvent.clientX -
+          startX
+        ),
 
         false,
       );
@@ -1810,7 +2242,7 @@ function startColumnResize(
 
 
 /* =========================================================
-   MEASURE TEXT FOR AUTO-FIT
+   MEASURE TEXT
 ========================================================= */
 
 function measureTextWidth(
@@ -1856,7 +2288,7 @@ function measureTextWidth(
 
 
 /* =========================================================
-   AUTO-FIT COLUMN
+   AUTO FIT COLUMN
 ========================================================= */
 
 function autoFitColumn(
@@ -2264,42 +2696,96 @@ async function saveCell(
   value,
 ) {
 
-  try {
+  /*
+   * Save also gets retry protection.
+   */
 
-    setSyncStatus(
-      "saving",
-      "● កំពុងរក្សាទុក...",
-    );
-
-
-    await api(
-      "updateCell",
-      {
-        rowId,
-        key,
-        value,
-      },
-    );
+  const retries =
+    3;
 
 
-    setSyncStatus(
-      "online",
-      "● បានរក្សាទុក",
-    );
+  let lastError =
+    null;
 
 
-  } catch (error) {
+  for (
+    let attempt = 1;
+    attempt <= retries;
+    attempt++
+  ) {
 
-    setSyncStatus(
-      "error",
-      "● រក្សាទុកមិនបាន",
-    );
+    try {
+
+      setSyncStatus(
+        "saving",
+        "● កំពុងរក្សាទុក...",
+      );
 
 
-    console.error(
-      error,
-    );
+      await api(
+        "updateCell",
+        {
+          rowId,
+          key,
+          value,
+        },
+      );
+
+
+      setSyncStatus(
+        "online",
+        "● បានរក្សាទុក",
+      );
+
+
+      return;
+
+
+    } catch (error) {
+
+      lastError =
+        error;
+
+
+      console.warn(
+        `Save attempt ${attempt}/${retries} failed`,
+        error,
+      );
+
+
+      if (!getToken()) {
+        return;
+      }
+
+
+      if (
+        attempt < retries
+      ) {
+
+        setSyncStatus(
+          "saving",
+          "● កំពុងព្យាយាមរក្សាទុកម្ដងទៀត...",
+        );
+
+
+        await sleep(
+          700 * attempt,
+        );
+      }
+    }
   }
+
+
+  console.error(
+    "Saving failed:",
+    lastError,
+  );
+
+
+  setSyncStatus(
+    "error",
+    "● រក្សាទុកមិនបាន — សូមពិនិត្យ Internet",
+  );
 }
 
 
@@ -2478,6 +2964,7 @@ function renderFooter() {
         td.style.textAlign =
           "right";
 
+
       } else if (
         column.key === "usd"
       ) {
@@ -2578,6 +3065,12 @@ async function addRow() {
 
   } catch (error) {
 
+    console.error(
+      "Add row failed:",
+      error,
+    );
+
+
     setSyncStatus(
       "error",
       "● បន្ថែមមិនបាន",
@@ -2595,7 +3088,8 @@ async function removeRow(
 ) {
 
   if (
-    currentRole !== "owner"
+    currentRole !==
+    "owner"
   ) {
     return;
   }
@@ -2667,6 +3161,12 @@ async function removeRow(
 
   } catch (error) {
 
+    console.error(
+      "Delete row failed:",
+      error,
+    );
+
+
     setSyncStatus(
       "error",
       "● លុបមិនបាន",
@@ -2730,6 +3230,12 @@ async function addColumn(
 
 
   } catch (error) {
+
+    console.error(
+      "Add column failed:",
+      error,
+    );
+
 
     alert(
       "មិនអាចបន្ថែម Column បានទេ។",
@@ -2815,6 +3321,12 @@ async function removeColumn(
 
 
   } catch (error) {
+
+    console.error(
+      "Delete column failed:",
+      error,
+    );
+
 
     alert(
       "មិនអាចលុប Column បានទេ។",
@@ -2932,6 +3444,12 @@ async function renameColumn() {
 
 
   } catch (error) {
+
+    console.error(
+      "Rename column failed:",
+      error,
+    );
+
 
     alert(
       "មិនអាចប្តូរឈ្មោះ Column បានទេ។",
@@ -3090,7 +3608,8 @@ async function resetData() {
       result.columns;
 
 
-    state.rows = [];
+    state.rows =
+      [];
 
 
     render();
@@ -3103,6 +3622,12 @@ async function resetData() {
 
 
   } catch (error) {
+
+    console.error(
+      "Reset failed:",
+      error,
+    );
+
 
     alert(
       "Reset មិនបាន។",
@@ -3367,6 +3892,7 @@ els.confirmRenameColumn
 
       event.preventDefault();
 
+
       await renameColumn();
     },
   );
@@ -3389,6 +3915,7 @@ els.renameColumnInput
 
         event.preventDefault();
 
+
         await renameColumn();
       }
     },
@@ -3396,17 +3923,129 @@ els.renameColumnInput
 
 
 /* =========================================================
-   ONLINE
+   DEVICE RETURNS TO APP
+========================================================= */
+
+document.addEventListener(
+  "visibilitychange",
+
+  async () => {
+
+    if (
+      document.hidden
+    ) {
+      return;
+    }
+
+
+    if (!getToken()) {
+      return;
+    }
+
+
+    if (
+      pendingSaves.size > 0
+    ) {
+      return;
+    }
+
+
+    try {
+
+      await loadData({
+        quiet: true,
+        retries: 3,
+      });
+
+
+    } catch (error) {
+
+      console.warn(
+        "Reload after returning failed:",
+        error,
+      );
+    }
+  },
+);
+
+
+/* =========================================================
+   WINDOW GETS FOCUS AGAIN
+========================================================= */
+
+window.addEventListener(
+  "focus",
+
+  async () => {
+
+    if (!getToken()) {
+      return;
+    }
+
+
+    if (
+      document.hidden ||
+      pendingSaves.size > 0 ||
+      isLoadingData
+    ) {
+      return;
+    }
+
+
+    try {
+
+      await loadData({
+        quiet: true,
+        retries: 2,
+      });
+
+
+    } catch (error) {
+
+      console.warn(
+        "Focus reload failed:",
+        error,
+      );
+    }
+  },
+);
+
+
+/* =========================================================
+   INTERNET RETURNS
 ========================================================= */
 
 window.addEventListener(
   "online",
-  () => {
+
+  async () => {
 
     setSyncStatus(
-      "online",
-      "● បានភ្ជាប់",
+      "saving",
+      "● Internet បានត្រឡប់មកវិញ — កំពុងភ្ជាប់...",
     );
+
+
+    if (!getToken()) {
+      return;
+    }
+
+
+    try {
+
+      await loadData({
+        quiet: true,
+        retries: 4,
+      });
+
+
+    } catch (error) {
+
+      console.warn(
+        "Reconnect failed:",
+        error,
+      );
+    }
   },
 );
 
@@ -3421,7 +4060,7 @@ window.addEventListener(
 
     setSyncStatus(
       "error",
-      "● Offline",
+      "● Offline — ទិន្នន័យដែលបាន Load នៅតែបង្ហាញ",
     );
   },
 );
