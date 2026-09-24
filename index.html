@@ -182,54 +182,23 @@
     <section class="summary-grid">
 
       <article class="summary-card">
-
-        <span>
-          ភ្ញៀវសរុប
-        </span>
-
-        <strong id="totalGuests">
-          0
-        </strong>
-
+        <span>ភ្ញៀវសរុប</span>
+        <strong id="totalGuests">0</strong>
       </article>
 
-
       <article class="summary-card">
-
-        <span>
-          សរុប KHR
-        </span>
-
-        <strong id="totalKHR">
-          KHR 0
-        </strong>
-
+        <span>សរុប KHR</span>
+        <strong id="totalKHR">KHR 0</strong>
       </article>
 
-
       <article class="summary-card">
-
-        <span>
-          សរុប USD
-        </span>
-
-        <strong id="totalUSD">
-          $0.00
-        </strong>
-
+        <span>សរុប USD</span>
+        <strong id="totalUSD">$0.00</strong>
       </article>
 
-
       <article class="summary-card">
-
-        <span>
-          Cash / QR
-        </span>
-
-        <strong id="paymentSplit">
-          0 / 0
-        </strong>
-
+        <span>Cash / QR</span>
+        <strong id="paymentSplit">0 / 0</strong>
       </article>
 
     </section>
@@ -241,8 +210,6 @@
 
     <section class="toolbar card">
 
-      <!-- SEARCH -->
-
       <div class="search-wrap">
 
         <label for="searchInput">
@@ -251,9 +218,7 @@
 
         <div class="search-box">
 
-          <span>
-            ⌕
-          </span>
+          <span>⌕</span>
 
           <input
             id="searchInput"
@@ -276,8 +241,6 @@
       </div>
 
 
-      <!-- PAYMENT FILTER -->
-
       <div class="filter-wrap">
 
         <label for="paymentFilter">
@@ -285,25 +248,13 @@
         </label>
 
         <select id="paymentFilter">
-
-          <option value="all">
-            ទាំងអស់
-          </option>
-
-          <option value="Cash">
-            Cash
-          </option>
-
-          <option value="QR">
-            QR
-          </option>
-
+          <option value="all">ទាំងអស់</option>
+          <option value="Cash">Cash</option>
+          <option value="QR">QR</option>
         </select>
 
       </div>
 
-
-      <!-- BANK FILTER -->
 
       <div class="filter-wrap">
 
@@ -312,36 +263,17 @@
         </label>
 
         <select id="bankFilter">
-
-          <option value="all">
-            ទាំងអស់
-          </option>
-
-          <option value="ABA">
-            ABA
-          </option>
-
-          <option value="ACLEDA">
-            ACLEDA
-          </option>
-
-          <option value="Wing">
-            Wing
-          </option>
-
-          <option value="Other">
-            Other
-          </option>
-
+          <option value="all">ទាំងអស់</option>
+          <option value="ABA">ABA</option>
+          <option value="ACLEDA">ACLEDA</option>
+          <option value="Wing">Wing</option>
+          <option value="Other">Other</option>
         </select>
 
       </div>
 
 
       <div class="toolbar-spacer"></div>
-
-
-      <!-- ADD COLUMN -->
 
       <button
         id="addColumnBtn"
@@ -366,7 +298,6 @@
           0 records
         </span>
 
-
         <div class="sync-wrap">
 
           <span
@@ -389,6 +320,8 @@
 
         <table id="guestTable">
 
+          <colgroup id="tableColgroup"></colgroup>
+
           <thead>
             <tr id="tableHeader"></tr>
           </thead>
@@ -400,6 +333,33 @@
           </tfoot>
 
         </table>
+
+      </div>
+
+
+      <!-- ADD BUTTONS AT BOTTOM -->
+
+      <div class="table-bottom-actions">
+
+        <button
+          id="addGuestBottomBtn"
+          type="button"
+          class="btn primary"
+        >
+          + បន្ថែមភ្ញៀវ
+        </button>
+
+        <button
+          id="addColumnBottomBtn"
+          type="button"
+          class="btn owner-only"
+        >
+          + Column
+        </button>
+
+        <span class="bottom-action-hint">
+          បន្ថែមភ្ញៀវ ឬ Column នៅទីនេះ ដោយមិនចាំបាច់ scroll ទៅខាងលើ
+        </span>
 
       </div>
 
@@ -534,8 +494,6 @@
 
   </template>
 
-
-  <!-- JAVASCRIPT -->
 
   <script src="app.js"></script>
 
