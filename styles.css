@@ -77,15 +77,11 @@ button {
 .login-icon {
   width: 60px;
   height: 60px;
-
   display: grid;
   place-items: center;
-
   margin: 0 auto 18px;
-
   border-radius: 18px;
   background: #f5eee9;
-
   font-size: 28px;
 }
 
@@ -107,63 +103,47 @@ button {
 .login-card label {
   display: block;
   color: var(--muted);
-
   font-size: 13px;
   font-weight: 600;
-
   margin-bottom: 8px;
 }
 
 .pin-wrap {
   display: flex;
   align-items: center;
-
   height: 48px;
-
   border: 1px solid var(--line);
   border-radius: 12px;
-
   background: white;
-
   overflow: hidden;
 }
 
 .pin-wrap:focus-within {
   border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(132, 91, 61, 0.10);
+  box-shadow: 0 0 0 3px rgba(132, 91, 61, 0.1);
 }
 
 .pin-wrap input {
   flex: 1;
-
   min-width: 0;
   height: 100%;
-
   border: 0;
   outline: 0;
-
   padding: 0 14px;
-
   letter-spacing: 0.18em;
 }
 
 .icon-btn {
   width: 48px;
   height: 48px;
-
   border: 0;
   background: transparent;
 }
 
 .login-error {
   min-height: 24px;
-
   margin: 8px 0 2px;
-
   color: var(--danger);
-
   font-size: 13px;
 }
 
@@ -174,12 +154,9 @@ button {
 
 .login-note {
   margin: 18px 0 0;
-
   color: var(--muted);
-
   font-size: 11px;
   line-height: 1.6;
-
   text-align: center;
 }
 
@@ -190,71 +167,52 @@ button {
 
 .app-shell {
   width: min(1500px, calc(100% - 32px));
-
   margin: 0 auto;
-
   padding: 28px 0 60px;
 }
 
 .topbar {
   display: flex;
-
   justify-content: space-between;
   align-items: flex-end;
-
   gap: 24px;
-
   margin-bottom: 22px;
 }
 
 .eyebrow {
   margin: 0 0 8px;
-
   color: var(--accent);
-
   font-size: 12px;
   font-weight: 700;
-
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 h1 {
   margin: 0;
-
   font-size: clamp(26px, 4vw, 42px);
-
   line-height: 1.15;
 }
 
 .subtitle {
   margin: 8px 0 0;
-
   color: var(--muted);
 }
 
 .top-actions {
   display: flex;
-
   flex-wrap: wrap;
-
   justify-content: flex-end;
   align-items: center;
-
   gap: 10px;
 }
 
 .role-badge {
   border: 1px solid rgba(47, 125, 85, 0.18);
-
   background: rgba(47, 125, 85, 0.08);
-
   color: var(--success);
-
   border-radius: 999px;
-
   padding: 8px 12px;
-
   font-size: 12px;
   font-weight: 700;
 }
@@ -266,31 +224,28 @@ h1 {
 
 .btn {
   border: 1px solid var(--line);
-
   background: #fff;
-
   color: var(--text);
-
   border-radius: 11px;
-
   padding: 10px 14px;
-
   font-weight: 600;
-
   transition: 0.18s ease;
 }
 
 .btn:hover {
   transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+}
 
-  box-shadow:
-    0 6px 15px rgba(0, 0, 0, 0.06);
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-
   color: #fff;
 }
 
@@ -304,7 +259,6 @@ h1 {
 
 .btn.danger-outline {
   color: var(--danger);
-
   border-color: rgba(199, 72, 72, 0.28);
 }
 
@@ -315,70 +269,50 @@ h1 {
 
 .summary-grid {
   display: grid;
-
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
-
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-
   margin-bottom: 16px;
 }
 
 .summary-card {
   background: var(--card);
-
   border: 1px solid var(--line);
-
   border-radius: var(--radius);
-
   padding: 18px;
-
   box-shadow: var(--shadow);
 }
 
 .summary-card span {
   display: block;
-
   color: var(--muted);
-
   font-size: 13px;
-
   margin-bottom: 8px;
 }
 
 .summary-card strong {
   display: block;
-
   font-size: 24px;
   line-height: 1.2;
-
   overflow-wrap: anywhere;
 }
 
 
 /* =========================================================
-   CARDS / TOOLBAR
+   TOOLBAR
 ========================================================= */
 
 .card {
   background: var(--card);
-
   border: 1px solid var(--line);
-
   border-radius: var(--radius);
-
   box-shadow: var(--shadow);
 }
 
 .toolbar {
   display: flex;
-
   align-items: flex-end;
-
   gap: 14px;
-
   padding: 14px;
-
   margin-bottom: 16px;
 }
 
@@ -390,76 +324,50 @@ h1 {
 .filter-wrap label,
 .dialog-card label {
   display: block;
-
   font-size: 12px;
-
   color: var(--muted);
-
   margin-bottom: 7px;
-
   font-weight: 600;
 }
 
 .search-box {
   height: 44px;
-
   display: flex;
-
   align-items: center;
-
   border: 1px solid var(--line);
-
   border-radius: 11px;
-
   padding: 0 10px;
-
   gap: 8px;
-
   background: #fff;
 }
 
 .search-box:focus-within {
   border-color: var(--accent);
-
-  box-shadow:
-    0 0 0 3px rgba(132, 91, 61, 0.10);
+  box-shadow: 0 0 0 3px rgba(132, 91, 61, 0.1);
 }
 
 .search-box input {
   flex: 1;
-
   border: 0;
-
   outline: 0;
-
   min-width: 0;
 }
 
 .search-box button {
   border: 0;
-
   background: transparent;
-
   color: var(--muted);
-
   font-size: 22px;
-
   line-height: 1;
 }
 
 .filter-wrap select {
   min-width: 140px;
-
   height: 44px;
-
   padding: 0 12px;
-
   border: 1px solid var(--line);
-
   border-radius: 11px;
-
   background: #fff;
-
   outline: 0;
 }
 
@@ -478,27 +386,18 @@ h1 {
 
 .table-meta {
   display: flex;
-
   justify-content: space-between;
-
   gap: 14px;
-
   padding: 13px 16px;
-
   border-bottom: 1px solid var(--line);
-
   color: var(--muted);
-
   font-size: 12px;
 }
 
 .sync-wrap {
   display: flex;
-
   align-items: center;
-
   gap: 10px;
-
   flex-wrap: wrap;
 }
 
@@ -518,51 +417,28 @@ h1 {
   color: var(--danger);
 }
 
-
-/* =========================================================
-   TABLE SCROLL
-========================================================= */
-
 .table-scroll {
   overflow: auto;
-
   max-height: 68vh;
 }
 
 table {
   width: max-content;
-
   min-width: 100%;
-
   border-collapse: separate;
-
   border-spacing: 0;
-
   table-layout: fixed;
 }
 
-
-/* =========================================================
-   TABLE HEADER
-========================================================= */
-
 thead th {
   position: sticky;
-
   top: 0;
-
   z-index: 3;
-
   background: #fbfbfc;
-
   color: #555d6a;
-
   font-size: 12px;
-
   text-align: left;
-
   font-weight: 700;
-
   border-bottom: 1px solid var(--line);
 }
 
@@ -580,14 +456,8 @@ thead th,
 tbody td,
 tfoot td {
   padding: 0;
-
   min-height: 46px;
 }
-
-
-/* =========================================================
-   ROW
-========================================================= */
 
 tbody tr {
   height: 46px;
@@ -607,32 +477,23 @@ tbody tr:hover {
 
 
 /* =========================================================
-   CELL
+   CELLS
 ========================================================= */
 
 .cell {
   width: 100%;
-
   height: 100%;
-
   min-height: 46px;
-
   border: 0;
-
   background: transparent;
-
   outline: 0;
-
   padding: 11px 12px;
-
   color: var(--text);
-
   text-overflow: ellipsis;
 }
 
 .cell:focus {
   background: #fff;
-
   box-shadow:
     inset 0 0 0 2px
     rgba(132, 91, 61, 0.28);
@@ -648,17 +509,11 @@ tbody tr:hover {
 
 .select-cell {
   width: 100%;
-
   height: 100%;
-
   min-height: 46px;
-
   border: 0;
-
   background: transparent;
-
   outline: 0;
-
   padding: 0 10px;
 }
 
@@ -668,45 +523,25 @@ tbody tr:hover {
     rgba(132, 91, 61, 0.28);
 }
 
-
-/* =========================================================
-   ROW NUMBER
-========================================================= */
-
 .row-number {
   width: 64px;
-
   text-align: center;
-
   color: var(--muted);
-
   font-size: 12px;
-
   position: relative;
-
   user-select: none;
 }
 
-
-/* =========================================================
-   ACTION COLUMN
-========================================================= */
-
 .actions-col {
   width: 86px;
-
   text-align: center;
 }
 
 .delete-row {
   border: 0;
-
   background: transparent;
-
   color: #a56b6b;
-
   font-size: 18px;
-
   padding: 8px 12px;
 }
 
@@ -721,57 +556,39 @@ tbody tr:hover {
 
 .column-header {
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
-
   gap: 8px;
-
   padding: 0 14px 0 10px;
-
   min-width: 0;
-
   height: 46px;
 }
 
 .column-title {
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
 }
 
 .column-actions {
   display: flex;
-
   align-items: center;
-
   gap: 2px;
-
   flex: 0 0 auto;
 }
 
 .column-actions button {
   width: 28px;
-
   height: 28px;
-
   border: 0;
-
   border-radius: 7px;
-
   background: transparent;
-
   color: #9da3ad;
-
   padding: 0;
 }
 
 .column-actions button:hover {
   background: #f2f3f6;
-
   color: var(--text);
 }
 
@@ -781,98 +598,66 @@ tbody tr:hover {
 
 
 /* =========================================================
-   EXCEL-LIKE COLUMN RESIZE
+   COLUMN RESIZE
 ========================================================= */
 
 .column-resize-handle {
   position: absolute;
-
   top: 0;
-
   right: -4px;
-
   width: 8px;
-
   height: 100%;
-
   cursor: col-resize;
-
   z-index: 8;
-
   touch-action: none;
 }
 
 .column-resize-handle::after {
   content: "";
-
   position: absolute;
-
   top: 9px;
-
   bottom: 9px;
-
   left: 3px;
-
   width: 2px;
-
   border-radius: 999px;
-
   background: transparent;
 }
 
 .column-resize-handle:hover::after,
-body.is-resizing-column
-.column-resize-handle::after {
-  background:
-    rgba(132, 91, 61, 0.35);
+body.is-resizing-column .column-resize-handle::after {
+  background: rgba(132, 91, 61, 0.35);
 }
 
 
 /* =========================================================
-   EXCEL-LIKE ROW RESIZE
+   ROW RESIZE
 ========================================================= */
 
 .row-resize-handle {
   position: absolute;
-
   left: 5px;
-
   right: 5px;
-
   bottom: -4px;
-
   height: 8px;
-
   cursor: row-resize;
-
   z-index: 4;
-
   touch-action: none;
 }
 
 .row-resize-handle::after {
   content: "";
-
   position: absolute;
-
   left: 13px;
-
   right: 13px;
-
   top: 3px;
-
   height: 2px;
-
   border-radius: 999px;
-
   background: transparent;
 }
 
 .row-resize-handle:hover::after,
-body.is-resizing-row
-.row-resize-handle::after {
-  background:
-    rgba(132, 91, 61, 0.35);
+body.is-resizing-row .row-resize-handle::after {
+  background: rgba(132, 91, 61, 0.35);
 }
 
 body.is-resizing-column,
@@ -890,24 +675,19 @@ body.is-resizing-row {
 
 
 /* =========================================================
-   TABLE FOOTER
+   FOOTER
 ========================================================= */
 
 tfoot {
   position: sticky;
-
   bottom: 0;
-
   z-index: 2;
 }
 
 tfoot td {
   background: #fbfbfc;
-
   border-top: 1px solid var(--line);
-
   padding: 11px 12px;
-
   font-weight: 700;
 }
 
@@ -918,44 +698,33 @@ tfoot td {
 
 .empty-state {
   padding: 42px !important;
-
   text-align: center;
-
   color: var(--muted);
 }
 
 .empty-state div {
   font-size: 16px;
-
   color: var(--text);
-
   margin-bottom: 6px;
 }
 
 
 /* =========================================================
-   BOTTOM ADD BUTTONS
+   BOTTOM BUTTONS
 ========================================================= */
 
 .table-bottom-actions {
   display: flex;
-
   align-items: center;
-
   gap: 10px;
-
   flex-wrap: wrap;
-
   padding: 12px 16px;
-
   border-top: 1px solid var(--line);
-
   background: #fbfbfc;
 }
 
 .bottom-action-hint {
   color: var(--muted);
-
   font-size: 12px;
 }
 
@@ -966,25 +735,18 @@ tfoot td {
 
 dialog {
   border: 0;
-
   border-radius: 18px;
-
   padding: 0;
-
-  box-shadow:
-    0 20px 70px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.18);
 }
 
 dialog::backdrop {
-  background:
-    rgba(20, 23, 29, 0.35);
-
+  background: rgba(20, 23, 29, 0.35);
   backdrop-filter: blur(2px);
 }
 
 .dialog-card {
   width: min(420px, 90vw);
-
   padding: 22px;
 }
 
@@ -994,25 +756,17 @@ dialog::backdrop {
 
 .dialog-card input {
   width: 100%;
-
   height: 44px;
-
   border: 1px solid var(--line);
-
   border-radius: 11px;
-
   padding: 0 12px;
-
   outline: 0;
 }
 
 .dialog-actions {
   display: flex;
-
   justify-content: flex-end;
-
   gap: 10px;
-
   margin-top: 18px;
 }
 
@@ -1025,7 +779,6 @@ dialog::backdrop {
 
   .topbar {
     align-items: flex-start;
-
     flex-direction: column;
   }
 
@@ -1034,8 +787,7 @@ dialog::backdrop {
   }
 
   .summary-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .toolbar {
@@ -1056,7 +808,6 @@ dialog::backdrop {
 
   .app-shell {
     width: min(100% - 20px, 1500px);
-
     padding-top: 16px;
   }
 
@@ -1066,7 +817,6 @@ dialog::backdrop {
 
   .summary-grid {
     grid-template-columns: 1fr 1fr;
-
     gap: 10px;
   }
 
@@ -1088,7 +838,6 @@ dialog::backdrop {
 
   .filter-wrap select {
     width: 100%;
-
     min-width: 0;
   }
 
@@ -1102,7 +851,6 @@ dialog::backdrop {
 
   .bottom-action-hint {
     width: 100%;
-
     text-align: center;
   }
 }
